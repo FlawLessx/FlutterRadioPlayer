@@ -13,12 +13,15 @@ import android.os.Build
 import android.os.IBinder
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.annotation.Nullable
+import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.bumptech.glide.Glide
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
+import com.google.android.exoplayer2.metadata.icy.IcyInfo
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
@@ -30,6 +33,9 @@ import me.sithiramunasinghe.flutter.flutter_radio_player.FlutterRadioPlayerPlugi
 import me.sithiramunasinghe.flutter.flutter_radio_player.R
 import me.sithiramunasinghe.flutter.flutter_radio_player.core.enums.PlaybackStatus
 import java.util.logging.Logger
+import com.bumptech.glide.annotation.GlideModule
+import com.bumptech.glide.module.AppGlideModule
+import java.util.concurrent.ExecutionException
 
 class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
@@ -53,9 +59,13 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
     private var playerNotificationManager: PlayerNotificationManager? = null
 
     // session keys
-    private val playbackNotificationId = 1025
+    private val playbackNotificationId = 1
     private val mediaSessionId = "streaming_audio_player_media_session"
     private val playbackChannelId = "streaming_audio_player_channel_id"
+    private var title = "-"
+    private var trackImage : Bitmap? = null
+    private var metadata : String? = ""
+    private var cover : String? = null
 
     inner class LocalBinder : Binder() {
         internal val service: StreamingCore
@@ -95,13 +105,6 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         player?.volume = volume.toFloat()
     }
 
-    fun setUrl(streamUrl: String, playWhenReady: Boolean) {
-        logger.info("ReadyPlay status: $playWhenReady")
-        logger.info("Set stream URL: $streamUrl")
-        player?.prepare(buildMediaSource(dataSourceFactory, streamUrl))
-        player?.playWhenReady = playWhenReady
-    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         logger.info("Firing up service. (onStartCommand)...")
@@ -111,14 +114,14 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         logger.info("LocalBroadCastManager Received...")
 
         // get details
-        val appName = intent!!.getStringExtra("appName")
-        val subTitle = intent.getStringExtra("subTitle")
+        val imgUrl = intent!!.getStringExtra("imgUrl")
         val streamUrl = intent.getStringExtra("streamUrl")
         val playWhenReady = intent.getStringExtra("playWhenReady") == "true"
+        val stationName = intent.getStringExtra("stationName")
 
         player = SimpleExoPlayer.Builder(context).build()
 
-        dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, appName))
+        dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, stationName))
 
         val audioSource = buildMediaSource(dataSourceFactory, streamUrl)
 
@@ -159,9 +162,14 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
         // register our meta data listener
         player?.addMetadataOutput {
-            val metaData = it.get(0).toString()
-            localBroadcastManager.sendBroadcast(broadcastMetaDataIntent.putExtra("meta_data", metaData))
+            val icyInfo: IcyInfo = it[0] as IcyInfo
+            metadata = it[0].toString()
+            cover = icyInfo.url
+            title = icyInfo.title ?: "-"
+
+            localBroadcastManager.sendBroadcast(broadcastMetaDataIntent.putExtra("meta_data", metadata))
         }
+
 
         val playerNotificationManager = PlayerNotificationManager.createWithNotificationChannel(
                 context,
@@ -171,7 +179,7 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
                 playbackNotificationId,
                 object : PlayerNotificationManager.MediaDescriptionAdapter {
                     override fun getCurrentContentTitle(player: Player): String {
-                        return appName
+                        return title
                     }
 
                     @Nullable
@@ -181,12 +189,20 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
                     @Nullable
                     override fun getCurrentContentText(player: Player): String? {
-                        return subTitle
+                        return stationName
                     }
 
                     @Nullable
                     override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
-                        return null // OS will use the application icon.
+                        if(cover != null){
+                            return loadBitmap(cover.toString(), callback)
+                        }
+                        else if(imgUrl != null) {
+                            return loadBitmap(imgUrl.toString(), callback)
+                        }
+                        else {
+                            return null
+                        }
                     }
                 },
                 object : PlayerNotificationManager.NotificationListener {
@@ -216,9 +232,10 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         playerNotificationManager.setUsePlayPauseActions(true)
         playerNotificationManager.setUseNavigationActions(false)
         playerNotificationManager.setUseNavigationActionsInCompactView(false)
-
         playerNotificationManager.setPlayer(player)
+        playerNotificationManager.setPriority(NotificationCompat.PRIORITY_HIGH)
         playerNotificationManager.setMediaSessionToken(mediaSession.sessionToken)
+        playerNotificationManager.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
         playbackStatus = PlaybackStatus.PLAYING
 
@@ -302,4 +319,25 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         }
     }
 
+    private fun loadBitmap(url: String, callback: PlayerNotificationManager.BitmapCallback?): Bitmap? {
+        val thread = Thread {
+            try {
+                val uri = Uri.parse(url)
+                val bitmap = Glide.with(applicationContext)
+                    .asBitmap()
+                    .load(uri)
+                    .submit().get()
+
+                trackImage = bitmap
+                callback?.onBitmap(bitmap)
+            } catch (e: ExecutionException) {
+                e.printStackTrace()
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
+        }
+        thread.start()
+
+        return trackImage
+    }
 }

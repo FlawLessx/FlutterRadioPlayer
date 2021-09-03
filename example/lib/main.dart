@@ -33,7 +33,10 @@ class _MyAppState extends State<MyApp> {
   Future<void> initRadioService() async {
     try {
       await _flutterRadioPlayer.init(
-          "Flutter Radio Example", "Live", "http://perseus.shoutca.st:9899/stream?type=http&nocache=1906", "false");
+          "https://i.imgur.com/YszFRO1.png",
+          "https://22253.live.streamtheworld.com/PRAMBORS_FM.mp3?dist=onlineradiobox",
+          "true",
+          "Zora Radio");
     } on PlatformException {
       print("Exception occurred while trying to register the services.");
     }
@@ -117,9 +120,16 @@ class _MyAppState extends State<MyApp> {
                   builder: (context, snapshot) {
                     return Text(snapshot.data);
                   }),
-              RaisedButton(child: Text("Change URL"), onPressed: () async {
-                _flutterRadioPlayer.setUrl("http://209.133.216.3:7018/;stream.mp3", "false");
-              })
+              RaisedButton(
+                  child: Text("Change URL"),
+                  onPressed: () async {
+                    await _flutterRadioPlayer.stop();
+                    await _flutterRadioPlayer.init(
+                        "https://i.imgur.com/ryEEdEi.jpg",
+                        "http://stream-uk1.radioparadise.com/aac-320",
+                        "true",
+                        "UK Radio");
+                  })
             ],
           ),
         ),

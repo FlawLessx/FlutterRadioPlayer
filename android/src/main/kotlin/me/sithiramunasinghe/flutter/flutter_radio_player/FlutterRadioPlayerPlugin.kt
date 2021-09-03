@@ -94,7 +94,6 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
                 logger.info("Set url invoked")
                 val url = call.argument<String>("streamUrl")!!
                 val playWhenReady = call.argument<String>("playWhenReady")!!
-                setUrl(url, playWhenReady)
             }
             else -> result.notImplemented()
         }
@@ -165,11 +164,11 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
         logger.info("Mapping method call to player item object")
 
         val url = methodCall.argument<String>("streamURL")
-        val appName = methodCall.argument<String>("appName")
-        val subTitle = methodCall.argument<String>("subTitle")
+        val imgUrl = methodCall.argument<String>("imgUrl")
         val playWhenReady = methodCall.argument<String>("playWhenReady")
+        val stationName = methodCall.argument<String>("stationName")
 
-        return PlayerItem(appName!!, subTitle!!, url!!, playWhenReady!!)
+        return PlayerItem(imgUrl!!, url!!, playWhenReady!!, stationName!!)
     }
 
     /*===========================
@@ -216,11 +215,6 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
         coreService.stop()
     }
 
-    private fun setUrl(streamUrl: String, playWhenReady: String) {
-        val playStatus: Boolean = playWhenReady == "true"
-        coreService.setUrl(streamUrl, playStatus)
-    }
-
     private fun setVolume(volume: Double) {
         logger.info("Attempting to change volume...")
         coreService.setVolume(volume)
@@ -231,9 +225,9 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
      */
     private fun setIntentData(intent: Intent, playerItem: PlayerItem): Intent {
         intent.putExtra("streamUrl", playerItem.streamUrl)
-        intent.putExtra("appName", playerItem.appName)
-        intent.putExtra("subTitle", playerItem.subTitle)
+        intent.putExtra("imgUrl", playerItem.imgUrl)
         intent.putExtra("playWhenReady", playerItem.playWhenReady)
+        intent.putExtra("stationName", playerItem.stationName)
         return intent
     }
 
