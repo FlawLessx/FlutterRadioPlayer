@@ -166,12 +166,13 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
             metadata = it[0].toString()
             cover = icyInfo.url
             title = icyInfo.title ?: "-"
+            playerNotificationManager?.invalidate()
 
             localBroadcastManager.sendBroadcast(broadcastMetaDataIntent.putExtra("meta_data", metadata))
         }
 
 
-        val playerNotificationManager = PlayerNotificationManager.createWithNotificationChannel(
+        playerNotificationManager = PlayerNotificationManager.createWithNotificationChannel(
                 context,
                 playbackChannelId,
                 R.string.channel_name,
@@ -228,16 +229,16 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         mediaSessionConnector = MediaSessionConnector(mediaSession)
         mediaSessionConnector?.setPlayer(player)
 
-        playerNotificationManager.setUseStopAction(true)
-        playerNotificationManager.setFastForwardIncrementMs(0)
-        playerNotificationManager.setRewindIncrementMs(0)
-        playerNotificationManager.setUsePlayPauseActions(true)
-        playerNotificationManager.setUseNavigationActions(false)
-        playerNotificationManager.setUseNavigationActionsInCompactView(false)
-        playerNotificationManager.setPlayer(player)
-        playerNotificationManager.setPriority(NotificationCompat.PRIORITY_HIGH)
-        playerNotificationManager.setMediaSessionToken(mediaSession.sessionToken)
-        playerNotificationManager.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        playerNotificationManager!!.setUseStopAction(true)
+        playerNotificationManager!!.setFastForwardIncrementMs(0)
+        playerNotificationManager!!.setRewindIncrementMs(0)
+        playerNotificationManager!!.setUsePlayPauseActions(true)
+        playerNotificationManager!!.setUseNavigationActions(false)
+        playerNotificationManager!!.setUseNavigationActionsInCompactView(false)
+        playerNotificationManager!!.setPlayer(player)
+        playerNotificationManager!!.setPriority(NotificationCompat.PRIORITY_HIGH)
+        playerNotificationManager!!.setMediaSessionToken(mediaSession.sessionToken)
+        playerNotificationManager!!.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
         if(iconResourceId != -1)
             //playerNotificationManager.setSmallIcon(iconResourceId)
