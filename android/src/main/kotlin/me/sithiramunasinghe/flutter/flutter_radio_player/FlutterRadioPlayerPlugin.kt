@@ -27,6 +27,7 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
 
     private var mEventSink: EventSink? = null
     private var mEventMetaDataSink: EventSink? = null
+    private val DRAWABLE = "drawable"
 
     companion object {
         @JvmStatic
@@ -40,7 +41,6 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
         const val methodChannelName = "flutter_radio_player"
         const val eventChannelName = methodChannelName + "_stream"
         const val eventChannelMetaDataName = methodChannelName + "_meta_stream"
-
 
         var isBound = false
         lateinit var applicationContext: Context
@@ -104,6 +104,8 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
         methodChannel.setMethodCallHandler(null)
         LocalBroadcastManager.getInstance(applicationContext).unregisterReceiver(broadcastReceiver)
         LocalBroadcastManager.getInstance(applicationContext).unregisterReceiver(broadcastReceiverMetaDetails)
+        applicationContext.unbindService(serviceConnection)
+        applicationContext.stopService(serviceIntent)
     }
 
 
@@ -160,15 +162,18 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
 
 
     private fun buildPlayerDetailsMeta(methodCall: MethodCall): PlayerItem {
-
         logger.info("Mapping method call to player item object")
 
         val url = methodCall.argument<String>("streamURL")
         val imgUrl = methodCall.argument<String>("imgUrl")
         val playWhenReady = methodCall.argument<String>("playWhenReady")
         val stationName = methodCall.argument<String>("stationName")
+        val iconName =  methodCall.argument<String>("notificationIconsName")
+        val iconResourceId = getDrawableResourceId(applicationContext, iconName!!)
 
-        return PlayerItem(imgUrl!!, url!!, playWhenReady!!, stationName!!)
+        logger.info("ApplicationIconId: $iconResourceId")
+
+        return PlayerItem(imgUrl!!, url!!, playWhenReady!!, stationName!!, iconResourceId)
     }
 
     /*===========================
@@ -180,6 +185,12 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
         logger.info("Attempting to initialize service...")
         if (!isBound) {
             logger.info("Service not bound, binding now....")
+            serviceIntent = setIntentData(serviceIntent, buildPlayerDetailsMeta(methodCall))
+            applicationContext.bindService(serviceIntent, serviceConnection, Context.BIND_IMPORTANT)
+            applicationContext.startService(serviceIntent)
+        } else {
+            stop()
+            logger.info("Service re-bound.")
             serviceIntent = setIntentData(serviceIntent, buildPlayerDetailsMeta(methodCall))
             applicationContext.bindService(serviceIntent, serviceConnection, Context.BIND_IMPORTANT)
             applicationContext.startService(serviceIntent)
@@ -228,6 +239,7 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
         intent.putExtra("imgUrl", playerItem.imgUrl)
         intent.putExtra("playWhenReady", playerItem.playWhenReady)
         intent.putExtra("stationName", playerItem.stationName)
+        intent.putExtra("iconResourceId", playerItem.iconResourceId)
         return intent
     }
 
@@ -274,5 +286,9 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
                 mEventMetaDataSink?.success(receivedMeta)
             }
         }
+    }
+
+    private fun getDrawableResourceId(context: Context, name: String): Int {
+        return context.resources.getIdentifier(name, DRAWABLE, context.packageName)
     }
 }

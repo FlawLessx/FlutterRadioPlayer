@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_radio_player/flutter_radio_player.dart';
-import 'package:flutter_radio_player_example/test_page.dart';
 
 void main() => runApp(MyApp());
 
@@ -34,7 +33,7 @@ class _MyAppState extends State<MyApp> {
     try {
       await _flutterRadioPlayer.init(
           "https://i.imgur.com/YszFRO1.png",
-          "https://22253.live.streamtheworld.com/PRAMBORS_FM.mp3?dist=onlineradiobox",
+          "https://22283.live.streamtheworld.com/PRAMBORS_FM.mp3?dist=onlineradiobox",
           "true",
           "Zora Radio");
     } on PlatformException {

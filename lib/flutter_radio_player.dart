@@ -22,13 +22,15 @@ class FlutterRadioPlayer {
   static Stream<String?>? _isPlayingStream;
   static Stream<String?>? _metaDataStream;
 
-  Future<void> init(String imgUrl, String streamURL, String playWhenReady,
-      String stationName) async {
+  Future<void> init(
+      String imgUrl, String streamURL, String playWhenReady, String stationName,
+      {String notificationIconsName = "ic_launcher"}) async {
     return await _channel.invokeMethod("initService", {
       "imgUrl": imgUrl,
       "streamURL": streamURL,
       "playWhenReady": playWhenReady,
-      "stationName": stationName
+      "stationName": stationName,
+      "notificationIconsName": notificationIconsName
     });
   }
 

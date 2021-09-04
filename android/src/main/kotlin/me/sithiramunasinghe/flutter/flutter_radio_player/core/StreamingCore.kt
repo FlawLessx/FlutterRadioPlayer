@@ -21,6 +21,8 @@ import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
+import com.google.android.exoplayer2.metadata.Metadata
+import com.google.android.exoplayer2.metadata.MetadataOutput
 import com.google.android.exoplayer2.metadata.icy.IcyInfo
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -32,10 +34,8 @@ import me.sithiramunasinghe.flutter.flutter_radio_player.FlutterRadioPlayerPlugi
 import me.sithiramunasinghe.flutter.flutter_radio_player.FlutterRadioPlayerPlugin.Companion.broadcastChangedMetaDataName
 import me.sithiramunasinghe.flutter.flutter_radio_player.R
 import me.sithiramunasinghe.flutter.flutter_radio_player.core.enums.PlaybackStatus
-import java.util.logging.Logger
-import com.bumptech.glide.annotation.GlideModule
-import com.bumptech.glide.module.AppGlideModule
 import java.util.concurrent.ExecutionException
+import java.util.logging.Logger
 
 class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
@@ -46,6 +46,10 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
     private lateinit var playbackStatus: PlaybackStatus
     private lateinit var dataSourceFactory: DefaultDataSourceFactory
     private lateinit var localBroadcastManager: LocalBroadcastManager
+    private var title = "-"
+    private var trackImage : Bitmap? = null
+    private var metadata : String? = ""
+    private var cover : String? = null
 
     // context
     private val context = this
@@ -62,10 +66,6 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
     private val playbackNotificationId = 1
     private val mediaSessionId = "streaming_audio_player_media_session"
     private val playbackChannelId = "streaming_audio_player_channel_id"
-    private var title = "-"
-    private var trackImage : Bitmap? = null
-    private var metadata : String? = ""
-    private var cover : String? = null
 
     inner class LocalBinder : Binder() {
         internal val service: StreamingCore
@@ -118,9 +118,9 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         val streamUrl = intent.getStringExtra("streamUrl")
         val playWhenReady = intent.getStringExtra("playWhenReady") == "true"
         val stationName = intent.getStringExtra("stationName")
+        val iconResourceId = intent.getIntExtra("iconResourceId", -1)
 
         player = SimpleExoPlayer.Builder(context).build()
-
         dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, stationName))
 
         val audioSource = buildMediaSource(dataSourceFactory, streamUrl)
@@ -204,6 +204,7 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
                             return null
                         }
                     }
+
                 },
                 object : PlayerNotificationManager.NotificationListener {
                     override fun onNotificationCancelled(notificationId: Int, dismissedByUser: Boolean) {
@@ -216,6 +217,7 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
                         startForeground(notificationId, notification)
                     }
                 }
+
         )
 
         logger.info("Building Media Session and Player Notification.")
@@ -236,6 +238,9 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         playerNotificationManager.setPriority(NotificationCompat.PRIORITY_HIGH)
         playerNotificationManager.setMediaSessionToken(mediaSession.sessionToken)
         playerNotificationManager.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+
+        if(iconResourceId != -1)
+            //playerNotificationManager.setSmallIcon(iconResourceId)
 
         playbackStatus = PlaybackStatus.PLAYING
 
