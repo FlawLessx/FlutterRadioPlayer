@@ -121,9 +121,9 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         val iconResourceId = intent.getIntExtra("iconResourceId", 0)
 
         player = SimpleExoPlayer.Builder(context).build()
-        dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, stationName))
+        dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, stationName!!))
 
-        val audioSource = buildMediaSource(dataSourceFactory, streamUrl)
+        val audioSource = buildMediaSource(dataSourceFactory, streamUrl!!)
 
         val playerEvents = object : Player.EventListener {
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
