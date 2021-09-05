@@ -13,11 +13,11 @@ class FlutterRadioPlayer {
       const EventChannel("flutter_radio_player_meta_stream");
 
   // constants to support event channel
-  static const flutter_radio_stopped = "flutter_radio_stopped";
-  static const flutter_radio_playing = "flutter_radio_playing";
-  static const flutter_radio_paused = "flutter_radio_paused";
-  static const flutter_radio_error = "flutter_radio_error";
-  static const flutter_radio_loading = "flutter_radio_loading";
+  static const radio_stopped = "radio_stopped";
+  static const radio_playing = "radio_playing";
+  static const radio_paused = "radio_paused";
+  static const radio_error = "radio_error";
+  static const radio_loading = "radio_loading";
 
   static Stream<String?>? _isPlayingStream;
   static Stream<String?>? _metaDataStream;
@@ -78,13 +78,4 @@ class FlutterRadioPlayer {
 
     return _metaDataStream;
   }
-}
-
-/// Flutter_radio_playback status
-enum PlaybackStatus {
-  flutter_radio_stopped,
-  flutter_radio_playing,
-  flutter_radio_paused,
-  flutter_radio_error,
-  flutter_radio_loading,
 }

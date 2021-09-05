@@ -7,7 +7,7 @@ import 'package:flutter_radio_player/flutter_radio_player.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatefulWidget {
-  var playerState = FlutterRadioPlayer.flutter_radio_paused;
+  var playerState = FlutterRadioPlayer.radio_paused;
 
   var volume = 0.8;
 
@@ -59,16 +59,16 @@ class _MyAppState extends State<MyApp> {
                     String returnData = snapshot.data;
                     print("object data: " + returnData);
                     switch (returnData) {
-                      case FlutterRadioPlayer.flutter_radio_stopped:
+                      case FlutterRadioPlayer.radio_stopped:
                         return RaisedButton(
                             child: Text("Start listening now"),
                             onPressed: () async {
                               await initRadioService();
                             });
                         break;
-                      case FlutterRadioPlayer.flutter_radio_loading:
+                      case FlutterRadioPlayer.radio_loading:
                         return Text("Loading stream...");
-                      case FlutterRadioPlayer.flutter_radio_error:
+                      case FlutterRadioPlayer.radio_error:
                         return RaisedButton(
                             child: Text("Retry ?"),
                             onPressed: () async {
@@ -87,8 +87,7 @@ class _MyAppState extends State<MyApp> {
                                     await _flutterRadioPlayer.playOrPause();
                                   },
                                   icon: snapshot.data ==
-                                          FlutterRadioPlayer
-                                              .flutter_radio_playing
+                                          FlutterRadioPlayer.radio_playing
                                       ? Icon(Icons.pause)
                                       : Icon(Icons.play_arrow)),
                               IconButton(

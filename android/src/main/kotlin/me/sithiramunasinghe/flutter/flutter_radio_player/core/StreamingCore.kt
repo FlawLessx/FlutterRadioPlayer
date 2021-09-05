@@ -20,9 +20,8 @@ import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
-import com.google.android.exoplayer2.metadata.Metadata
-import com.google.android.exoplayer2.metadata.MetadataOutput
 import com.google.android.exoplayer2.metadata.icy.IcyInfo
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -36,6 +35,7 @@ import me.sithiramunasinghe.flutter.flutter_radio_player.R
 import me.sithiramunasinghe.flutter.flutter_radio_player.core.enums.PlaybackStatus
 import java.util.concurrent.ExecutionException
 import java.util.logging.Logger
+
 
 class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
@@ -118,7 +118,7 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
         val streamUrl = intent.getStringExtra("streamUrl")
         val playWhenReady = intent.getStringExtra("playWhenReady") == "true"
         val stationName = intent.getStringExtra("stationName")
-        val iconResourceId = intent.getIntExtra("iconResourceId", -1)
+        val iconResourceId = intent.getIntExtra("iconResourceId", 0)
 
         player = SimpleExoPlayer.Builder(context).build()
         dataSourceFactory = DefaultDataSourceFactory(context, Util.getUserAgent(context, stationName))
@@ -130,11 +130,11 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
                 playbackStatus = when (playbackState) {
                     Player.STATE_BUFFERING -> {
-                        pushEvent(FLUTTER_RADIO_PLAYER_LOADING)
+                        pushEvent(RADIO_PLAYER_LOADING)
                         PlaybackStatus.LOADING
                     }
                     Player.STATE_IDLE -> {
-                        pushEvent(FLUTTER_RADIO_PLAYER_STOPPED)
+                        pushEvent(RADIO_PLAYER_STOPPED)
                         PlaybackStatus.STOPPED
                     }
                     Player.STATE_READY -> {
@@ -147,7 +147,7 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
             }
 
             override fun onPlayerError(error: ExoPlaybackException) {
-                pushEvent(FLUTTER_RADIO_PLAYER_ERROR)
+                pushEvent(RADIO_PLAYER_ERROR)
                 playbackStatus = PlaybackStatus.ERROR
                 error.printStackTrace()
             }
@@ -266,6 +266,8 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
     }
 
     override fun onAudioFocusChange(audioFocus: Int) {
+        logger.info("Audio Changing: $audioFocus")
+
         when (audioFocus) {
 
             AudioManager.AUDIOFOCUS_GAIN -> {
@@ -317,10 +319,10 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
     private fun setPlayWhenReady(playWhenReady: Boolean): PlaybackStatus {
         return if (playWhenReady) {
-            pushEvent(FLUTTER_RADIO_PLAYER_PLAYING)
+            pushEvent(RADIO_PLAYER_PLAYING)
             PlaybackStatus.PLAYING
         } else {
-            pushEvent(FLUTTER_RADIO_PLAYER_PAUSED)
+            pushEvent(RADIO_PLAYER_PAUSED)
             PlaybackStatus.PAUSED
         }
     }
