@@ -266,11 +266,13 @@ public class FlutterRadioPlayerPlugin : FlutterPlugin, MethodCallHandler {
      */
     private var broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            val returnStatus = intent?.getStringExtra("status")
+            logger.info("Received status: $returnStatus")
+
             if (intent != null) {
                 val returnStatus = intent.getStringExtra("status")
                 logger.info("Received status: $returnStatus")
                 mEventSink?.success(returnStatus)
-
             }
         }
     }

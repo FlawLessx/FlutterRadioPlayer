@@ -20,7 +20,6 @@ import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.metadata.icy.IcyInfo
 import com.google.android.exoplayer2.source.MediaSource
@@ -53,7 +52,6 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
     // context
     private val context = this
-    private val broadcastIntent = Intent(broadcastActionName)
     private val broadcastMetaDataIntent = Intent(broadcastChangedMetaDataName)
 
     // class instances
@@ -134,7 +132,7 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
                         PlaybackStatus.LOADING
                     }
                     Player.STATE_IDLE -> {
-                        pushEvent(RADIO_PLAYER_STOPPED)
+                        //pushEvent(RADIO_PLAYER_STOPPED)
                         PlaybackStatus.STOPPED
                     }
                     Player.STATE_READY -> {
@@ -149,7 +147,8 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
             override fun onPlayerError(error: ExoPlaybackException) {
                 pushEvent(RADIO_PLAYER_ERROR)
                 playbackStatus = PlaybackStatus.ERROR
-                error.printStackTrace()
+                logger.info("onPlayerStateChanged: $playbackStatus")
+                //error.printStackTrace()
             }
         }
 
@@ -298,7 +297,9 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
      */
     private fun pushEvent(eventName: String) {
         logger.info("Pushing Event: $eventName")
-        localBroadcastManager.sendBroadcast(broadcastIntent.putExtra("status", eventName))
+        val broadcastIntent = Intent(broadcastActionName)
+        broadcastIntent.putExtra("status", eventName)
+        localBroadcastManager.sendBroadcast(broadcastIntent)
     }
 
     /**
