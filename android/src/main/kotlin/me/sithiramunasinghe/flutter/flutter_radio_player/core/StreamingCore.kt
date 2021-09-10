@@ -45,7 +45,9 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
     private lateinit var playbackStatus: PlaybackStatus
     private lateinit var dataSourceFactory: DefaultDataSourceFactory
     private lateinit var localBroadcastManager: LocalBroadcastManager
-    private var title = "-"
+    private var title : String? = "-"
+    private var artist : String? = null
+
     private var trackImage : Bitmap? = null
     private var metadata : String? = ""
     private var cover : String? = null
@@ -132,10 +134,14 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
                         PlaybackStatus.LOADING
                     }
                     Player.STATE_IDLE -> {
-                        //pushEvent(RADIO_PLAYER_STOPPED)
+                        pushEvent(RADIO_PLAYER_STOPPED)
                         PlaybackStatus.STOPPED
                     }
                     Player.STATE_READY -> {
+                        setPlayWhenReady(playWhenReady)
+                    }
+                    Player.STATE_ENDED -> {
+                        pushEvent(RADIO_PLAYER_STOPPED)
                         setPlayWhenReady(playWhenReady)
                     }
                     else -> setPlayWhenReady(playWhenReady)
@@ -164,7 +170,15 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
             val icyInfo: IcyInfo = it[0] as IcyInfo
             metadata = it[0].toString()
             cover = icyInfo.url
-            title = icyInfo.title ?: "-"
+
+            if(icyInfo.title != null){
+                val converted : List<String> =  convertTitle(icyInfo.title!!);
+                if(converted.size == 2){
+                    artist = converted[0].trim();
+                    title = converted[1].trim()
+                }
+            }
+
             playerNotificationManager?.invalidate()
 
             localBroadcastManager.sendBroadcast(broadcastMetaDataIntent.putExtra("meta_data", metadata))
@@ -179,7 +193,7 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
                 playbackNotificationId,
                 object : PlayerNotificationManager.MediaDescriptionAdapter {
                     override fun getCurrentContentTitle(player: Player): String {
-                        return title
+                        return title!!
                     }
 
                     @Nullable
@@ -189,7 +203,10 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
                     @Nullable
                     override fun getCurrentContentText(player: Player): String? {
-                        return stationName
+                        return if(artist != null)
+                            artist
+                        else
+                            stationName
                     }
 
                     @Nullable
@@ -349,4 +366,17 @@ class StreamingCore : Service(), AudioManager.OnAudioFocusChangeListener {
 
         return trackImage
     }
+
+    private fun convertTitle(title: String ) : List<String>{
+        var tempData = ""
+
+        tempData = title.replace('\t', '-')
+        tempData = tempData.capitalizeWords()
+        val result: List<String> = tempData.split('-');
+
+        return result;
+    }
+
+    private fun String.capitalizeWords(): String =
+        split(" ").joinToString(" ") { it.toLowerCase().capitalize() }
 }
